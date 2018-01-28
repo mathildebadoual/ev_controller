@@ -1,19 +1,35 @@
 """ State Machine """
 
+import ev_controller.ev_model as ev_model
 
-class StateMachine():
+class StateMachine:
+    def __init__(self, initial_state):
+        self.current_state = initial_state
+        self.current_state.run()
+
+    def run_all(self):
+        self
+
+class State:
     def __init__(self):
         pass
 
+    def run(self):
+        raise NotImplementedError
 
-class State():
-    def __init__(self):
-        pass
+    def next(self):
+        raise NotImplementedError
 
 
 class CarIsGone():
     def __init__(self):
         pass
+
+    def run(self):
+        print('The car is gone')
+
+    def next(self, inputs):
+        if input
 
 
 class CarIsPlugged(State):
