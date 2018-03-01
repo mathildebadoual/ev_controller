@@ -3,8 +3,6 @@
 import random
 import matplotlib.pyplot as plt
 import numpy as np
-import sys
-
 
 MAX_TIME = 10
 
@@ -31,10 +29,8 @@ class Record:
 t_list = np.linspace(0, MAX_TIME, MAX_TIME+1)
 presence_list = [1 for t in t_list]
 control_list = [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0]
-presence = Presence()
-control = Control()
 record = Record()
-controller = Controller(control, presence, control_list, presence_list)
+controller = Controller(control_list, presence_list)
 y_max = 10
 y_min = 0
 charge_rate = 1
@@ -66,7 +62,7 @@ class State:
     def run_sim(self, y_init):
         self.y_current = y_init
         if self.name == 'gone':
-            self.y_current =
+            self.y_current = random.randint(0, y_max)
         while not self.check_transition_from() and self.controller.time < MAX_TIME:
             self.y_current = self.run_step()
             self.record.y.append(self.y_current)
