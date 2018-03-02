@@ -1,12 +1,13 @@
 import random
 import environment as environment
 import numpy as np
+import matplotlib.pyplot as plt
 from collections import deque
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
 
-EPISODES = 10
+EPISODES = 2000
 
 class DQNAgent:
     def __init__(self, state_size, action_size):
@@ -37,7 +38,7 @@ class DQNAgent:
         if np.random.rand() <= self.epsilon:
             return random.randrange(self.action_size)
         act_values = self.model.predict(state)
-        return act_values
+        return np.argmax(act_values[0])
 
     def replay(self, batch_size):
         minibatch = random.sample(self.memory, batch_size)
@@ -57,25 +58,24 @@ if __name__ == "__main__":
     env = environment.Env()
     state_size = env.state_size
     action_size = env.action_size
-    print(action_size)
     agent = DQNAgent(state_size, action_size)
     done = False
     batch_size = 32
+    reward_list = []
 
     for e in range(EPISODES):
         state = env.reset()
         state = np.reshape(state, [1, state_size])
-        for time in range(500):
-            action = agent.predict_action(state)
-            print(action)
-            next_state, reward, done = env.step(action)
-            reward = reward if not done else -10
-            next_state = np.reshape(next_state, [1, state_size])
-            agent.remember(state, action, reward, next_state, done)
-            state = next_state
-            if done:
-                print("episode: {}/{}, score: {}, e: {:.2}"
-                      .format(e, EPISODES, time, agent.epsilon))
-                break
+        action = agent.predict_action(state)
+        next_state, reward, done = env.step(action)
+        next_state = np.reshape(next_state, [1, state_size])
+        agent.remember(state, action, reward, next_state, done)
+        state = next_state
+        reward_list.append(reward[0][0])
+        print("episode: {}/{}, reward: {}, e: {:.2}"
+                .format(e, EPISODES, reward[0][0], agent.epsilon))
         if len(agent.memory) > batch_size:
             agent.replay(batch_size)
+
+    plt.plot(reward_list)
+    plt.show()
