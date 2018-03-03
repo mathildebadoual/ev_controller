@@ -29,8 +29,6 @@ class State:
 
     def run_sim(self, y_init):
         self.y_current = y_init
-        if self.name == 'gone':
-            self.y_current = 0
         while not self.check_transition_from() and self.car.time < self.car.max_time:
             self.y_current = self.run_step()
             self.car.record.y.append(self.y_current)
@@ -41,14 +39,14 @@ class State:
 
 
 def t_not_charge(y, car):
-    if y == car.y_max and car.presence == 1:
+    if y >= car.y_max and car.presence == 1:
         return True
     if car.control == 0 and car.presence == 1:
         return True
     return False
 
 def t_charge(y, car):
-    if car.control == 1 and car.presence == 1:
+    if car.control == 1 and car.presence == 1 and y < car.y_max:
         return True
     return False
 
@@ -63,7 +61,7 @@ class Car:
         self.record = Record()
         self.y_max = 1
         self.y_min = 0
-        charge_rate = 0.005
+        charge_rate = 0.01
         self.charge = State(charge_rate, 'charge', self, t_charge)
         self.not_charge = State(0, 'not charge', self, t_not_charge)
         self.gone = State(0, 'gone', self, t_gone)
@@ -74,16 +72,20 @@ class Car:
         self.time = 0
         self.control = 0
         self.presence = 1
-        self.max_time = 60
+        self.max_time = 10
         self.soc_init = 0
 
     def next_step(self):
         self.time += 1
 
     def run(self):
+        self.time = 0
         if self.presence == 0:
             self.gone.run_sim(self.soc_init)
+            return 'stop'
         if self.control == 0 and self.presence == 1:
             self.not_charge.run_sim(self.soc_init)
+            return 'stop'
         if self.control == 1 and self.presence == 1:
             self.charge.run_sim(self.soc_init)
+            return 'stop'

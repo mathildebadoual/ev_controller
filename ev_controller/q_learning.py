@@ -7,7 +7,7 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
 
-EPISODES = 2000
+EPISODES = 1000
 
 class DQNAgent:
     def __init__(self, state_size, action_size):
@@ -79,3 +79,23 @@ if __name__ == "__main__":
 
     plt.plot(reward_list)
     plt.show()
+
+
+    state_list = np.zeros((24, state_size))
+    state = env.init()
+    state_list[0, :] = state[:, 0]
+    for e in range(1, 24):
+        state = np.reshape(state, [1, state_size])
+        action = agent.predict_action(state)
+        next_state, reward, done = env.step(action)
+        state = next_state
+        state_list[e, :] = state[:, 0]
+
+    plt.figure(figsize=(16, 8))
+    plt.plot(state_list[:, 0])
+    plt.plot(state_list[:, 1])
+    plt.plot(state_list[:, 2])
+    plt.plot(state_list[:, 9], label='price')
+    plt.legend()
+    plt.show()
+

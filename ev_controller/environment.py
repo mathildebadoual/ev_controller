@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import random
-import matplotlib.pyplot as plt
 import state_machine as state_machine
+import matplotlib.pyplot as plt
 
 class Env:
     def __init__(self):
@@ -15,7 +15,7 @@ class Env:
         self.get_price_data()
         self.time_simu = 24
         self.create_matrix_a()
-        self.charge_rate = 0.005*60
+        self.charge_rate = 0.1*60
         self.energy_max = 10
         self.create_cars()
         self.create_map_action()
@@ -72,9 +72,19 @@ class Env:
         x = np.random.uniform(0, 1, size=(self.num_cars, 1))
         z = np.random.randint(2, size=(self.num_cars, 1))
         y = np.random.uniform(0, 1, size=(self.num_cars, 1))
-        h = np.random.randint(23, size=(1, 1))
+        #h = np.random.randint(23, size=(1, 1))
+        h = np.random.randint(24)
         p = self.update_price(h)
-        self.state = np.concatenate((x, y, z, p, h), axis=0)
+        self.state = np.concatenate((x, y, z, p, np.reshape(np.array([h]), (1, 1))), axis=0)
+        return self.state
+
+    def init(self):
+        x = np.random.uniform(0, 1, size=(self.num_cars, 1))
+        y = np.zeros((self.num_cars, 1))
+        z = np.random.randint(0, 1, size=(self.num_cars, 1))
+        h = 0
+        p = self.update_price(h)
+        self.state = np.concatenate((x, y, z, p, np.reshape(np.array([h]), (1, 1))), axis=0)
         return self.state
 
     def create_arrival(self):
@@ -88,13 +98,16 @@ class Env:
 
     def get_price_data(self):
         self.ref_price_data = pd.read_csv('prices_a10.csv')['prices_to_buy_summer'].values
+        plt.plot(self.ref_price_data)
+        plt.show()
 
     def update_price(self, time):
-        return np.reshape(self.ref_price_data[int(time)]*(1 + random.uniform(-1/10, 1/10)), (1, 1))
+        #return np.reshape(20*self.ref_price_data[int(time)]*(1 + random.uniform(-1/10, 1/10)), (1, 1))
+        return np.reshape(self.ref_price_data[int(time)], (1, 1))
 
     def reward(self):
 
         #TODO(Mathilde): Add weights of the consummer satisfaction depending on the hour of the day?
 
-        reward = self.previous_price*self.charge_rate*np.sum(self.control) + self.lambd*np.sum(self.state[self.num_cars:2*self.num_cars, 0])
+        reward = - 10*self.previous_price*self.charge_rate*np.sum(self.control) + self.lambd*np.sum(self.state[self.num_cars:2*self.num_cars, 0])
         return reward
