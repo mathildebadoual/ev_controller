@@ -81,21 +81,23 @@ if __name__ == "__main__":
     plt.show()
 
 
-    state_list = np.zeros((24, state_size))
+    state_list = np.zeros((23, state_size))
     state = env.init()
     state_list[0, :] = state[:, 0]
-    for e in range(1, 24):
+    for e in range(1, 23):
         state = np.reshape(state, [1, state_size])
         action = agent.predict_action(state)
         next_state, reward, done = env.step(action)
         state = next_state
-        state_list[e, :] = state[:, 0]
+        state_list[e, :] = state[:, 0].T
 
+    print(state_list)
+    print(state_list[:, 9])
     plt.figure(figsize=(16, 8))
     plt.plot(state_list[:, 0])
     plt.plot(state_list[:, 1])
     plt.plot(state_list[:, 2])
-    plt.plot(state_list[:, 9], label='price')
+    plt.plot([10*element for element in state_list[:, 9]], label='price')
     plt.legend()
     plt.show()
 

@@ -11,7 +11,7 @@ class Env:
         self.action_size = 8
         self.state = np.zeros((self.state_size, 1))
         self.theta = 0.5
-        self.lambd = 10
+        self.lambd = 1
         self.get_price_data()
         self.time_simu = 24
         self.create_matrix_a()
@@ -52,7 +52,8 @@ class Env:
     def step(self, action):
         real_action = self.map_action[action]
         self.previous_price = self.update_price(self.state[-1, 0])
-        self.price = self.update_price(self.state[-1, 0])
+        self.price = self.update_price(self.state[-1, 0] +  1)
+        print(self.price)
         control_sys = np.zeros((self.num_cars, 1))
         for i, car in enumerate(self.list_cars):
             car.control = real_action[i]
@@ -63,7 +64,7 @@ class Env:
         z_h = np.zeros((self.num_cars, 1))
         self.control = np.concatenate((control_sys, z_h, z_h, [[0]], [[0]]), axis=0)
         arrivals = self.create_arrival()
-        update = np.concatenate((z_h, z_h, arrivals, self.price, [[0]]), axis=0)
+        update = np.concatenate((z_h, z_h, arrivals, self.price, [[1]]), axis=0)
         self.state = np.dot(self.a, self.state) - self.control + update
         reward = self.reward()
         return self.state, reward, False
@@ -73,9 +74,10 @@ class Env:
         z = np.random.randint(2, size=(self.num_cars, 1))
         y = np.random.uniform(0, 1, size=(self.num_cars, 1))
         #h = np.random.randint(23, size=(1, 1))
-        h = np.random.randint(24)
+        h = np.random.randint(23)
         p = self.update_price(h)
         self.state = np.concatenate((x, y, z, p, np.reshape(np.array([h]), (1, 1))), axis=0)
+        print(self.state)
         return self.state
 
     def init(self):
@@ -98,8 +100,6 @@ class Env:
 
     def get_price_data(self):
         self.ref_price_data = pd.read_csv('prices_a10.csv')['prices_to_buy_summer'].values
-        plt.plot(self.ref_price_data)
-        plt.show()
 
     def update_price(self, time):
         #return np.reshape(20*self.ref_price_data[int(time)]*(1 + random.uniform(-1/10, 1/10)), (1, 1))
@@ -109,5 +109,5 @@ class Env:
 
         #TODO(Mathilde): Add weights of the consummer satisfaction depending on the hour of the day?
 
-        reward = - 10*self.previous_price*self.charge_rate*np.sum(self.control) + self.lambd*np.sum(self.state[self.num_cars:2*self.num_cars, 0])
+        reward = - 100*self.previous_price*self.charge_rate*np.sum(self.control) - 0*self.lambd*np.sum(self.state[self.num_cars:2*self.num_cars, 0])
         return reward
