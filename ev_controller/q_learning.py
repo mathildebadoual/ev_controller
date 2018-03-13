@@ -6,8 +6,9 @@ from collections import deque
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
+from keras import backend as K
 
-EPISODES = 1000
+EPISODES = 10000
 
 class DQNAgent:
     def __init__(self, state_size, action_size):
@@ -72,13 +73,13 @@ if __name__ == "__main__":
         agent.remember(state, action, reward, next_state, done)
         state = next_state
         reward_list.append(reward[0][0])
-        print("episode: {}/{}, reward: {}, e: {:.2}"
-                .format(e, EPISODES, reward[0][0], agent.epsilon))
+        #print("episode: {}/{}, reward: {}, e: {:.2}"
+        #        .format(e, EPISODES, reward[0][0], agent.epsilon))
         if len(agent.memory) > batch_size:
             agent.replay(batch_size)
 
     plt.plot(reward_list)
-    plt.show()
+    plt.savefig('reward.png')
 
 
     state_list = np.zeros((23, state_size))
@@ -91,13 +92,12 @@ if __name__ == "__main__":
         state = next_state
         state_list[e, :] = state[:, 0].T
 
-    print(state_list)
-    print(state_list[:, 9])
     plt.figure(figsize=(16, 8))
     plt.plot(state_list[:, 0])
     plt.plot(state_list[:, 1])
     plt.plot(state_list[:, 2])
-    plt.plot([10*element for element in state_list[:, 9]], label='price')
+    plt.plot([10*element for element in state_list[:, 3]], label='price')
     plt.legend()
-    plt.show()
+    plt.savefig('result.png')
+    print(agent.model.get_weights())
 

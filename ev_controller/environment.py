@@ -6,12 +6,12 @@ import matplotlib.pyplot as plt
 
 class Env:
     def __init__(self):
-        self.num_cars = 3
+        self.num_cars = 1
         self.state_size = self.num_cars * 3 + 2
-        self.action_size = 8
+        self.action_size = 2**(self.num_cars)
         self.state = np.zeros((self.state_size, 1))
         self.theta = 0.5
-        self.lambd = 1
+        self.lambd = 0
         self.get_price_data()
         self.time_simu = 24
         self.create_matrix_a()
@@ -22,15 +22,8 @@ class Env:
 
     def create_map_action(self):
         self.map_action = {
-                0: np.array([0, 0, 0]),
-                1: np.array([1, 1, 1]),
-                2: np.array([0, 0, 1]),
-                3: np.array([0, 1, 0]),
-                4: np.array([1, 0, 0]),
-                5: np.array([1, 1, 0]),
-                6: np.array([0, 1, 1]),
-                7: np.array([1, 0, 1])}
-
+                0: np.array([0]),
+                1: np.array([1])}
 
     def create_cars(self):
         self.list_cars = []
@@ -53,7 +46,6 @@ class Env:
         real_action = self.map_action[action]
         self.previous_price = self.update_price(self.state[-1, 0])
         self.price = self.update_price(self.state[-1, 0] +  1)
-        print(self.price)
         control_sys = np.zeros((self.num_cars, 1))
         for i, car in enumerate(self.list_cars):
             car.control = real_action[i]
@@ -70,18 +62,17 @@ class Env:
         return self.state, reward, False
 
     def reset(self):
-        x = np.random.uniform(0, 1, size=(self.num_cars, 1))
+        x = np.random.randint(10, size=(self.num_cars, 1))*0.1
         z = np.random.randint(2, size=(self.num_cars, 1))
-        y = np.random.uniform(0, 1, size=(self.num_cars, 1))
+        y = np.random.randint(10, size=(self.num_cars, 1))*0.1
         #h = np.random.randint(23, size=(1, 1))
         h = np.random.randint(23)
         p = self.update_price(h)
         self.state = np.concatenate((x, y, z, p, np.reshape(np.array([h]), (1, 1))), axis=0)
-        print(self.state)
         return self.state
 
     def init(self):
-        x = np.random.uniform(0, 1, size=(self.num_cars, 1))
+        x = np.random.randint(10, size=(self.num_cars, 1))*0.1
         y = np.zeros((self.num_cars, 1))
         z = np.random.randint(0, 1, size=(self.num_cars, 1))
         h = 0
@@ -92,10 +83,10 @@ class Env:
     def create_arrival(self):
         arrival = np.zeros((self.num_cars, 1))
         for i in range(self.num_cars):
-            if int(self.state[self.num_cars*2 + i, 0]) == 0:
-                arrival[i, 0] = random.uniform(0, 1)*random.randint(0, 1)
-            else:
+            if self.state[self.num_cars*2 + i, 0] > 0:
                 arrival[i, 0] = 0
+            else:
+                arrival[i, 0] = random.randint(0, 10)*0.1
         return arrival
 
     def get_price_data(self):
@@ -109,5 +100,5 @@ class Env:
 
         #TODO(Mathilde): Add weights of the consummer satisfaction depending on the hour of the day?
 
-        reward = - 100*self.previous_price*self.charge_rate*np.sum(self.control) - 0*self.lambd*np.sum(self.state[self.num_cars:2*self.num_cars, 0])
+        reward = - 100*self.previous_price*self.charge_rate*np.sum(self.control) - self.lambd*np.sum(self.state[self.num_cars:2*self.num_cars, 0])
         return reward

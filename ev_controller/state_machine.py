@@ -61,7 +61,7 @@ class Car:
         self.record = Record()
         self.y_max = 1
         self.y_min = 0
-        charge_rate = 0.01
+        charge_rate = 0.1
         self.charge = State(charge_rate, 'charge', self, t_charge)
         self.not_charge = State(0, 'not charge', self, t_not_charge)
         self.gone = State(0, 'gone', self, t_gone)
