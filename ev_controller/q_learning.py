@@ -8,7 +8,7 @@ from keras.layers import Dense
 from keras.optimizers import Adam
 from keras import backend as K
 
-EPISODES = 10000
+EPISODES = 100
 
 class DQNAgent:
     def __init__(self, state_size, action_size):
@@ -73,8 +73,8 @@ if __name__ == "__main__":
         agent.remember(state, action, reward, next_state, done)
         state = next_state
         reward_list.append(reward[0][0])
-        #print("episode: {}/{}, reward: {}, e: {:.2}"
-        #        .format(e, EPISODES, reward[0][0], agent.epsilon))
+        print("episode: {}/{}, reward: {}, e: {:.2}"
+                .format(e, EPISODES, reward[0][0], agent.epsilon))
         if len(agent.memory) > batch_size:
             agent.replay(batch_size)
 
@@ -93,9 +93,8 @@ if __name__ == "__main__":
         state_list[e, :] = state[:, 0].T
 
     plt.figure(figsize=(16, 8))
-    plt.plot(state_list[:, 0])
-    plt.plot(state_list[:, 1])
-    plt.plot(state_list[:, 2])
+    for i in range(env.num_cars):
+        plt.plot(state_list[:, i])
     plt.plot([10*element for element in state_list[:, 3]], label='price')
     plt.legend()
     plt.savefig('result.png')
