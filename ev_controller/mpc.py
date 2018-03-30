@@ -6,22 +6,22 @@ import cvxpy
 import pandas as pd
 
 NUM_CARS = 3
-CONTROL_HORIZON = 24
-SIMULATION_TIME = 24*3
+CONTROL_HORIZON = 24*4
+SIMULATION_TIME = 24*4
 
 
 def get_parameters():
-    alpha = 100
-    beta = 1
+    alpha = 10
+    beta = 0.5
     gamma = 1
     return alpha, beta, gamma
 
 def get_data():
-    prices_day = np.array([10, 10, 10, 10, 9, 9, 1, 1, 11, 1, 12, 10, 6, 1, 1, 1, 1, 12, 1, 50, 50, 50, 50, 50])
+    prices_day = np.array([1, 1, 1, 1, 8, 9, 8, 8, 6, 5, 4, 4, 5, 5, 6, 6, 7, 10, 12, 7, 5, 5, 3, 1])
     prices = prices_day
     for i in range(int(SIMULATION_TIME/len(prices_day))-1):
         prices = np.concatenate((prices, prices_day))
-
+    prices = np.concatenate((prices, [0]))
     cars_presence = np.ones((SIMULATION_TIME, NUM_CARS))
     return prices, cars_presence
 
@@ -71,7 +71,7 @@ def get_cost_matrix():
     R = np.zeros((NUM_CARS, NUM_CARS, SIMULATION_TIME))
 
     for i in range(SIMULATION_TIME):
-        R[:, :, i] = np.eye(NUM_CARS) * alpha * prices[i]**2
+        R[:, :, i] = np.eye(NUM_CARS) * alpha * prices[i+1]**2
         Q[:, :, i] = np.eye(NUM_CARS) * beta
 
     return Q, R
