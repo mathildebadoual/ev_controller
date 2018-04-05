@@ -7,7 +7,7 @@ class TestMPC(unittest.TestCase):
         self.num_cars = mpc.NUM_CARS
         self.control_horizon = mpc.CONTROL_HORIZON
         self.simulation_time = mpc.SIMULATION_TIME
-        self.alpha, self.beta, self.gamma = mpc.get_parameters()
+        self.alpha, self.beta, self.gamma, self.u_max = mpc.get_parameters()
 
     def test_get_cost_matrix(self):
         Q, R = mpc.get_cost_matrix()

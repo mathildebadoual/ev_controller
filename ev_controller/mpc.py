@@ -1,32 +1,41 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import math
 import time
 import cvxpy
-import pandas as pd
+from scipy.interpolate import interp1d
 
-NUM_CARS = 3
-CONTROL_HORIZON = 24*4
-SIMULATION_TIME = 24*4
+NUM_CARS = 4
+CONTROL_HORIZON = 24*6
+SIMULATION_TIME = 24*6
 
 
 def get_parameters():
-    alpha = 10
-    beta = 0.5
+    alpha = 20
+    beta = 0.1
     gamma = 1
-    return alpha, beta, gamma
+    u_max = 0.1
+    u_tot_max = 0.03
+    return alpha, beta, gamma, u_max, u_tot_max
 
 def get_data():
-    prices_day = np.array([1, 1, 1, 1, 8, 9, 8, 8, 6, 5, 4, 4, 5, 5, 6, 6, 7, 10, 12, 7, 5, 5, 3, 1])
-    prices = prices_day
+
+    #TODO(Mathilde): find prices from caiso
+    prices_day = np.array([1, 1, 1, 1, 8, 9, 8, 8, 6, 5, 4, 4, 5, 5, 6, 6, 7, 10, 12, 7, 5, 3, 2, 1])
+    time_set = np.linspace(0, 23, SIMULATION_TIME)
+    prices = interp1d(range(len(prices_day)), prices_day)
+    prices = prices(time_set)
     for i in range(int(SIMULATION_TIME/len(prices_day))-1):
         prices = np.concatenate((prices, prices_day))
     prices = np.concatenate((prices, [0]))
-    cars_presence = np.ones((SIMULATION_TIME, NUM_CARS))
+
+    cars_presence = np.ones((NUM_CARS, SIMULATION_TIME))
+    for  j in range(SIMULATION_TIME-50):
+        cars_presence[1, j] = 0
+
     return prices, cars_presence
 
 def simulation(x, u):
-    A, B = get_model_matrix()
+    A, B = get_real_matrix()
     return np.dot(A, x) + np.dot(B, u)
 
 def mpc_control(x0):
@@ -36,7 +45,7 @@ def mpc_control(x0):
     A, B = get_model_matrix()
     Q, R = get_cost_matrix()
 
-    alpha, beta, gamma = get_parameters()
+    alpha, beta, gamma, u_max, u_tot_max = get_parameters()
 
     cost = 0
     constraints = []
@@ -44,7 +53,10 @@ def mpc_control(x0):
     for t in range(CONTROL_HORIZON):
         cost += cvxpy.quad_form((np.ones((NUM_CARS)) - x[:, t+1]), Q[:, :, t])
         cost += cvxpy.quad_form(u[:, t], R[:, :, t])
-        constraints += [x[:, t+1] == A * x[:, t] +B * u[:, t]]
+        constraints += [x[:, t+1] == A[:, :, t] * x[:, t] +B[:, :, t] * u[:, t]]
+        constraints += [u[:, t] >= 0, u[:, t] <= np.ones((NUM_CARS)) - x[:, t]]
+        constraints += [u[:, t] <= u_max]
+        constraints += [np.sum(u[:, t]) <= u_tot_max]
     constraints += [x[:, 0] == x0]
 
     prob = cvxpy.Problem(cvxpy.Minimize(cost), constraints)
@@ -59,8 +71,19 @@ def mpc_control(x0):
 
 def get_model_matrix():
     gamma = get_parameters()[2]
-    A = np.eye(NUM_CARS)
-    B = np.eye(NUM_CARS) * gamma
+    cars_presence = get_data()[1]
+
+    A = np.zeros((NUM_CARS, NUM_CARS, SIMULATION_TIME))
+    B = np.zeros((NUM_CARS, NUM_CARS, SIMULATION_TIME))
+
+    for i in range(SIMULATION_TIME):
+        A[:, :, i] = np.eye(NUM_CARS)
+        B[:, :, i] = np.eye(NUM_CARS) * gamma
+
+    for i in range(NUM_CARS):
+        A[i, i, :] = np.multiply(A[i, i, :], cars_presence[i, :])
+        B[i, i, :] = np.multiply(B[i, i, :], cars_presence[i, :])
+
     return A, B
 
 def get_cost_matrix():
@@ -74,13 +97,16 @@ def get_cost_matrix():
         R[:, :, i] = np.eye(NUM_CARS) * alpha * prices[i+1]**2
         Q[:, :, i] = np.eye(NUM_CARS) * beta
 
+    for i in range(NUM_CARS):
+        R[i, i, :] = np.multiply(R[i, i, :], cars_presence[i, :])
+        Q[i, i, :] = np.multiply(Q[i, i, :], cars_presence[i, :])
+
     return Q, R
 
 
 if __name__ == '__main__':
-    x = mpc_control(np.array([0.5, 0.2, 0]))
+    x = mpc_control(np.array([0.5, 0.2, 0, 0.1]))
     prices, cars_presence  = get_data()
-    print(x)
     plt.figure(figsize=(10, 7))
     for i in range(NUM_CARS):
         plt.plot(range(CONTROL_HORIZON+1), x[i, :].T, label='soc of car '+str(i))
