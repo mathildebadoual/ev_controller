@@ -10,8 +10,8 @@ SIMULATION_TIME = 24*6
 
 
 def get_parameters():
-    alpha = 20
-    beta = 0.1
+    alpha = 1
+    beta = 0.001
     gamma = 1
     u_max = 0.1
     u_tot_max = 0.03
@@ -29,7 +29,7 @@ def get_data():
     prices = np.concatenate((prices, [0]))
 
     cars_presence = np.ones((NUM_CARS, SIMULATION_TIME))
-    for  j in range(SIMULATION_TIME-50):
+    for j in range(SIMULATION_TIME-50):
         cars_presence[1, j] = 0
 
     return prices, cars_presence
@@ -47,13 +47,16 @@ def mpc_control(x0):
 
     alpha, beta, gamma, u_max, u_tot_max = get_parameters()
 
+    prices = get_data()[0]
+
     cost = 0
     constraints = []
 
     for t in range(CONTROL_HORIZON):
+        #cost += sum(u[:, t]*prices[t]) + sum(1 - x[:, t]) * beta
         cost += cvxpy.quad_form((np.ones((NUM_CARS)) - x[:, t+1]), Q[:, :, t])
         cost += cvxpy.quad_form(u[:, t], R[:, :, t])
-        constraints += [x[:, t+1] == A[:, :, t] * x[:, t] +B[:, :, t] * u[:, t]]
+        constraints += [x[:, t+1] == A[:, :, t] * x[:, t] + B[:, :, t] * u[:, t]]
         constraints += [u[:, t] >= 0, u[:, t] <= np.ones((NUM_CARS)) - x[:, t]]
         constraints += [u[:, t] <= u_max]
         constraints += [np.sum(u[:, t]) <= u_tot_max]
@@ -88,13 +91,13 @@ def get_model_matrix():
 
 def get_cost_matrix():
     prices, cars_presence = get_data()
-    alpha, beta = get_parameters()[:2]
+    beta = get_parameters()[1]
 
     Q = np.zeros((NUM_CARS, NUM_CARS, SIMULATION_TIME))
     R = np.zeros((NUM_CARS, NUM_CARS, SIMULATION_TIME))
 
     for i in range(SIMULATION_TIME):
-        R[:, :, i] = np.eye(NUM_CARS) * alpha * prices[i+1]**2
+        R[:, :, i] = np.eye(NUM_CARS) * prices[i+1]**2
         Q[:, :, i] = np.eye(NUM_CARS) * beta
 
     for i in range(NUM_CARS):
@@ -105,12 +108,16 @@ def get_cost_matrix():
 
 
 if __name__ == '__main__':
-    x = mpc_control(np.array([0.5, 0.2, 0, 0.1]))
+    x = mpc_control(np.array([0, 0, 0, 0]))
+    print(x)
     prices, cars_presence  = get_data()
     plt.figure(figsize=(10, 7))
     for i in range(NUM_CARS):
         plt.plot(range(CONTROL_HORIZON+1), x[i, :].T, label='soc of car '+str(i))
     plt.plot(range(CONTROL_HORIZON), prices[:CONTROL_HORIZON]/max(prices), label='prices')
+    plt.title('charging schedule for 24h')
+    plt.xlabel('time')
+    plt.ylabel('energy')
     plt.legend()
     plt.grid()
     plt.savefig('result_mpc.png')
