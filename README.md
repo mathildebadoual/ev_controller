@@ -1,3 +1,1 @@
-# EV controller & Reinforcement Learning
-
-Applying reinforcement learning to smart grid systems
+# EV controller & Markov Decision Process
