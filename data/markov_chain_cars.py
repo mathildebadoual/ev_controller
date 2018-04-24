@@ -69,5 +69,4 @@ def updatefig(j):
 # kick off the animation
 ani = animation.FuncAnimation(fig, updatefig, frames=range(len(imagelist)),
                               interval=1000)
-plt.show()
-
+ani.save('/Users/mathildebadoual/code/ev_controller/report/cars.mp4', writer='ffmpeg')

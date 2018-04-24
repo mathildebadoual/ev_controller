@@ -17,7 +17,6 @@ data = pd.read_csv('/Users/mathildebadoual/code/ev_controller/data/price_demand.
 data_price = data['Price']
 
 data_price_grid = np.linspace(0, max(data_price), num_interp)
-print(data_price_grid)
 # Interpolation function: interp(arg1, arg2, ...)
 T = range(len(data_price))
 t = np.mod(np.divide(T, 2), horizon / 2);
@@ -59,4 +58,4 @@ def updatefig(j):
 ani = animation.FuncAnimation(fig, updatefig, frames=range(len(imagelist)),
                               interval=1000)
 
-ani.save('prices.mp4', writer='ffmpeg')
+ani.save('/Users/mathildebadoual/code/ev_controller/report/prices.mp4', writer='ffmpeg')
