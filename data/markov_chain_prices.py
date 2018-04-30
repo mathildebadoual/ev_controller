@@ -8,8 +8,9 @@ import sqlite3
 import itertools
 import pandas as pd
 from scipy.interpolate import interp1d
+import mpl_toolkits.mplot3d.axes3d as p3
 
-horizon = 48
+horizon = 24
 num_interp = 20
 
 data = pd.read_csv('/Users/mathildebadoual/code/ev_controller/data/price_demand.csv')
@@ -42,16 +43,38 @@ imagelist = [P[:, :, k] for k in range(P.shape[2])]
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-fig = plt.figure() # make figure
+
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')# make figure
+
+row_names = [str(int(price)) for price in data_price_grid]
+column_names = row_names
+
+X, Y = np.meshgrid(range(num_interp), range(num_interp))
+X = X.flatten('F')
+Y = Y.flatten('F')
+Z = np.zeros_like(X)
+
+dx = 0.5 * np.ones_like(Z)
+dy = dx.copy()
 
 # make axesimage object
 # the vmin and vmax here are very important to get the color map correct
-im = plt.imshow(imagelist[0], cmap=plt.get_cmap('Reds'))
+im = ax.bar3d(X, Y, Z, dx, dy, imagelist[0].flatten())
 
 # function to update figure
 def updatefig(j):
+    ax.cla()
+    ax.set_zlim(0, 1)
     # set the data in the axesimage object
-    im.set_array(imagelist[j])
+    im = ax.bar3d(X, Y, Z, dx, dy, imagelist[j].flatten())
+    ax.w_yaxis.set_ticklabels(row_names)
+    ax.w_xaxis.set_ticklabels(column_names)
+    ax.set_xlabel('Past states')
+    ax.set_ylabel('Next states')
+    ax.set_zlabel('Probability')
+    ax.set_title('Probability of moving from one state to another at hour ' + str(j) + ' of the day')
     # return the artists set
     return [im]
 # kick off the animation
